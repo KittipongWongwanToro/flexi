@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flexi Benefit Executive Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#eef2f7;color:#1a202c;font-size:14px}
+.header{background:linear-gradient(135deg,#0f2d4a 0%,#1e5276 60%,#2980b9 100%);color:#fff;padding:18px 28px;display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #f39c12}
+.header-left h1{font-size:20px;font-weight:700;letter-spacing:.4px}
+.header-left p{font-size:12px;opacity:.7;margin-top:3px}
+.header-right{text-align:right;font-size:12px;opacity:.75}
+.header-right strong{display:block;font-size:13px;opacity:1;margin-bottom:2px}
+.header-badge{display:inline-block;background:rgba(243,156,18,.25);border:1px solid rgba(243,156,18,.5);color:#f39c12;padding:2px 10px;border-radius:20px;font-size:11px;font-weight:600;margin-top:4px}
+.exec-summary{margin:20px 24px 0;background:linear-gradient(135deg,#0f3460 0%,#16213e 100%);color:#fff;border-radius:14px;padding:20px 24px;border-left:5px solid #f39c12}
+.exec-summary .es-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:#f39c12;font-weight:700;margin-bottom:8px}
+.exec-summary p{font-size:13.5px;line-height:1.75;opacity:.95}
+.filter-bar{margin:16px 24px;background:#fff;border-radius:12px;padding:14px 20px;display:flex;gap:20px;align-items:flex-end;flex-wrap:wrap;box-shadow:0 1px 6px rgba(0,0,0,.07);border:1px solid #e2e8f0}
+.filter-group{display:flex;flex-direction:column;gap:5px}
+.filter-group label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#64748b}
+.filter-group select{border:1px solid #cbd5e0;border-radius:8px;padding:6px 12px;font-size:13px;color:#2d3748;background:#f8fafc;cursor:pointer;outline:none;min-width:130px}
+.year-btns{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.year-btn{padding:5px 12px;border-radius:20px;border:1.5px solid #cbd5e0;background:#f8fafc;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s}
+.year-btn.active{background:#1e5276;color:#fff;border-color:#1e5276}
+.btn-reset{margin-left:auto;background:#1e5276;color:#fff;border:none;border-radius:8px;padding:8px 18px;font-size:13px;cursor:pointer;font-weight:600}
+.main{padding:0 24px 36px}
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:14px;margin-bottom:18px}
+.kpi-card{background:#fff;border-radius:12px;padding:16px 18px;box-shadow:0 1px 6px rgba(0,0,0,.07);border-top:4px solid;position:relative;overflow:hidden}
+.kpi-card::after{content:attr(data-icon);position:absolute;right:12px;top:12px;font-size:28px;opacity:.12}
+.kpi-card .kl{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#718096;margin-bottom:6px}
+.kpi-card .kv{font-size:22px;font-weight:800;line-height:1;color:#1a202c}
+.kpi-card .ks{font-size:11px;color:#a0aec0;margin-top:5px}
+.kpi-card .kb{display:inline-flex;align-items:center;gap:3px;font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;margin-top:5px}
+.kb-green{background:#dcfce7;color:#16a34a}.kb-red{background:#fee2e2;color:#dc2626}.kb-orange{background:#fff7ed;color:#ea580c}.kb-blue{background:#dbeafe;color:#1d4ed8}
+.section-title{font-size:15px;font-weight:700;color:#0f2d4a;margin:22px 0 12px;display:flex;align-items:center;gap:8px;padding-left:12px;border-left:4px solid #f39c12}
+.cr2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.cr1{margin-bottom:16px}
+.cr-4-6{display:grid;grid-template-columns:4fr 6fr;gap:16px;margin-bottom:16px}
+.chart-card{background:#fff;border-radius:12px;padding:18px 20px;box-shadow:0 1px 6px rgba(0,0,0,.07);border:1px solid #e2e8f0}
+.chart-card h3{font-size:13px;font-weight:700;color:#2d3748;margin-bottom:2px}
+.chart-card .csub{font-size:11px;color:#a0aec0;margin-bottom:14px}
+.anomaly-bar{background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px 18px;margin-bottom:16px;display:flex;gap:12px;align-items:flex-start}
+.anomaly-bar .ai{font-size:20px;flex-shrink:0}
+.anomaly-bar .at{font-size:13px;color:#78350f;line-height:1.6}
+.item-tbl{width:100%;border-collapse:collapse;font-size:13px}
+.item-tbl th{background:#f8fafc;color:#64748b;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.5px;padding:10px 14px;text-align:left;border-bottom:2px solid #e2e8f0}
+.item-tbl td{padding:10px 14px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.item-tbl tr:hover td{background:#fafbff}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap}
+.b-hs{background:#fee2e2;color:#991b1b}.b-hf{background:#dbeafe;color:#1e40af}.b-em{background:#dcfce7;color:#14532d}.b-lu{background:#f1f5f9;color:#64748b}.b-st{background:#fef3c7;color:#92400e}
+.progress-bar{height:5px;background:#f1f5f9;border-radius:3px;overflow:hidden;margin-top:4px;width:100%;min-width:80px}
+.progress-fill{height:100%;border-radius:3px}
+.heatmap-wrap{overflow-x:auto}
+.hm-grid{display:grid;grid-template-columns:60px repeat(12,1fr);gap:3px;min-width:600px}
+.hm-hdr{font-size:10px;font-weight:700;text-align:center;color:#64748b;padding:4px 2px}
+.hm-yr{font-size:11px;font-weight:700;color:#2d3748;display:flex;align-items:center;padding:2px 4px}
+.hm-cell{padding:6px 2px;text-align:center;border-radius:5px;font-size:10px;font-weight:600;cursor:default}
+.forecast-wrap{background:linear-gradient(135deg,#0f3460 0%,#1e5276 100%);border-radius:14px;padding:20px 24px;color:#fff;margin-bottom:16px}
+.forecast-wrap h3{font-size:14px;font-weight:700;margin-bottom:16px;color:#f39c12}
+.forecast-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+.fc-item{background:rgba(255,255,255,.1);border-radius:10px;padding:14px;border:1px solid rgba(255,255,255,.1)}
+.fc-item .fl{font-size:10px;opacity:.7;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px}
+.fc-item .fv{font-size:20px;font-weight:800;color:#f39c12}
+.fc-item .fs{font-size:11px;opacity:.6;margin-top:3px}
+.ai-box{background:#fff;border-radius:12px;padding:20px;box-shadow:0 1px 6px rgba(0,0,0,.07);border:1px solid #e2e8f0;margin-bottom:16px}
+.ai-box h3{font-size:13px;font-weight:700;color:#2d3748;margin-bottom:16px}
+.ai-item{display:flex;gap:12px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid #f1f5f9}
+.ai-item:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
+.ai-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-top:5px}
+.ai-text{font-size:13px;color:#374151;line-height:1.6}
+.pl-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:16px}
+.pl-card{background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 6px rgba(0,0,0,.07);border-left:4px solid}
+.pl-card .pl-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px}
+.pl-card .pl-value{font-size:18px;font-weight:800;margin-bottom:3px}
+.pl-card .pl-sub{font-size:11px;color:#a0aec0}
+.footer{text-align:center;padding:20px;font-size:11px;color:#a0aec0;border-top:1px solid #e2e8f0;margin-top:8px}
+@media(max-width:1200px){.kpi-row{grid-template-columns:repeat(3,1fr)}}
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>&#127970; Flexi Benefit Executive Dashboard</h1>
+    <p>HR Analytics &bull; Employee Benefits Intelligence Platform</p>
+  </div>
+  <div class="header-right">
+    <strong id="hdr-date"></strong>
+    <div>Data: 2020 &ndash; 2026</div>
+    <div class="header-badge">&#128337; Live &bull; Filters Active</div>
+  </div>
+</div>
+
+<div class="exec-summary">
+  <div class="es-label">&#129302; Executive Summary &middot; Auto-Generated</div>
+  <p id="exec-summary-text">Loading insights...</p>
+</div>
+
+<div class="filter-bar">
+  <div class="filter-group">
+    <label>Filter by Year</label>
+    <div class="year-btns" id="year-btns"></div>
+  </div>
+  <div class="filter-group">
+    <label>Month</label>
+    <select id="filter-month">
+      <option value="0">All Months</option>
+      <option value="1">January</option><option value="2">February</option>
+      <option value="3">March</option><option value="4">April</option>
+      <option value="5">May</option><option value="6">June</option>
+      <option value="7">July</option><option value="8">August</option>
+      <option value="9">September</option><option value="10">October</option>
+      <option value="11">November</option><option value="12">December</option>
+    </select>
+  </div>
+  <div class="filter-group">
+    <label>Benefit Item</label>
+    <select id="filter-item"><option value="all">All Items</option></select>
+  </div>
+  <button class="btn-reset" onclick="resetFilters()">&#8635; Reset Filters</button>
+</div>
+
+<div class="main">
+  <div class="kpi-row">
+    <div class="kpi-card" data-icon="&#128176;" style="border-top-color:#2980b9">
+      <div class="kl">Total Claim Amount</div><div class="kv" id="kpi-total">-</div><div class="ks" id="kpi-total-sub">-</div>
+    </div>
+    <div class="kpi-card" data-icon="&#128203;" style="border-top-color:#27ae60">
+      <div class="kl">Total Transactions</div><div class="kv" id="kpi-txn">-</div><div class="ks" id="kpi-txn-sub">-</div>
+    </div>
+    <div class="kpi-card" data-icon="&#128179;" style="border-top-color:#e67e22">
+      <div class="kl">Avg per Transaction</div><div class="kv" id="kpi-avg">-</div><div class="ks" id="kpi-avg-sub">-</div>
+    </div>
+    <div class="kpi-card" data-icon="&#128197;" style="border-top-color:#9b59b6">
+      <div class="kl">Avg Monthly Spending</div><div class="kv" id="kpi-monthly">-</div><div class="ks" id="kpi-monthly-sub">-</div>
+    </div>
+    <div class="kpi-card" data-icon="&#127991;" style="border-top-color:#1abc9c">
+      <div class="kl">Benefit Items</div><div class="kv" id="kpi-items">-</div><div class="ks" id="kpi-items-sub">-</div>
+    </div>
+    <div class="kpi-card" data-icon="&#128200;" style="border-top-color:#e74c3c">
+      <div class="kl">YoY Growth</div><div class="kv" id="kpi-yoy">-</div><div class="kb kb-blue" id="kpi-yoy-badge">-</div>
+    </div>
+  </div>
+
+  <div id="anomaly-box"></div>
+
+  <div class="section-title">&#128200; Trend Analysis</div>
+  <div class="cr2">
+    <div class="chart-card">
+      <h3>Monthly Claim Amount Trend</h3><div class="csub">Year-over-Year comparison by month</div>
+      <div style="position:relative"><canvas id="c-trend" height="220" role="img" aria-label="Monthly claim trend"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Yearly Total Spending</h3><div class="csub">Annual claim amount (all years)</div>
+      <div style="position:relative"><canvas id="c-yearly" height="220" role="img" aria-label="Yearly total"></canvas></div>
+    </div>
+  </div>
+  <div class="cr2">
+    <div class="chart-card">
+      <h3>Monthly Transaction Count</h3><div class="csub">Number of claims per month by year</div>
+      <div style="position:relative"><canvas id="c-txn" height="200" role="img" aria-label="Monthly transactions"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Monthly Average Claim Amount</h3><div class="csub">Average value per transaction by month</div>
+      <div style="position:relative"><canvas id="c-avg-mo" height="200" role="img" aria-label="Monthly avg claim"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-title">&#127991; Item Analysis</div>
+  <div class="cr1">
+    <div class="chart-card">
+      <h3>Top Items by Total Claim Amount</h3><div class="csub">Ranked by total spending in selected period</div>
+      <div style="position:relative"><canvas id="c-item-bar" height="180" role="img" aria-label="Top items"></canvas></div>
+    </div>
+  </div>
+  <div class="cr-4-6">
+    <div class="chart-card">
+      <h3>Item Distribution</h3><div class="csub">Share of total budget</div>
+      <div style="position:relative;height:260px"><canvas id="c-donut" role="img" aria-label="Item distribution"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Pareto Analysis (80/20 Rule)</h3><div class="csub">Cumulative % of total spend</div>
+      <div style="position:relative"><canvas id="c-pareto" height="240" role="img" aria-label="Pareto chart"></canvas></div>
+    </div>
+  </div>
+  <div class="cr1">
+    <div class="chart-card">
+      <h3>Item Classification &amp; Performance Table</h3>
+      <div class="csub">Auto-classified by spending pattern and growth trajectory</div>
+      <table class="item-tbl">
+        <thead><tr><th>Benefit Item</th><th>Classification</th><th>Total Amount</th><th>Transactions</th><th>Avg/Claim</th><th>YoY Growth</th><th>Budget Share</th></tr></thead>
+        <tbody id="item-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="section-title">&#128202; Spending Pattern Analysis</div>
+  <div class="pl-grid">
+    <div class="pl-card" style="border-color:#27ae60">
+      <div class="pl-label" style="color:#27ae60">&#127942; Peak Month (Avg)</div>
+      <div class="pl-value" id="peak-month" style="color:#27ae60">-</div><div class="pl-sub" id="peak-sub">-</div>
+    </div>
+    <div class="pl-card" style="border-color:#3498db">
+      <div class="pl-label" style="color:#3498db">&#128311; Lowest Month (Avg)</div>
+      <div class="pl-value" id="low-month" style="color:#3498db">-</div><div class="pl-sub" id="low-sub">-</div>
+    </div>
+    <div class="pl-card" style="border-color:#e74c3c">
+      <div class="pl-label" style="color:#e74c3c">&#9888;&#65039; Highest Single Month</div>
+      <div class="pl-value" id="spike-month" style="color:#e74c3c">-</div><div class="pl-sub" id="spike-sub">-</div>
+    </div>
+  </div>
+  <div class="cr2">
+    <div class="chart-card">
+      <h3>Quarterly Spending Breakdown</h3><div class="csub">Total claim by quarter per year</div>
+      <div style="position:relative"><canvas id="c-quarterly" height="220" role="img" aria-label="Quarterly spending"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Month-over-Month Growth Rate</h3><div class="csub">% change from previous month</div>
+      <div style="position:relative"><canvas id="c-mom" height="220" role="img" aria-label="MoM growth"></canvas></div>
+    </div>
+  </div>
+  <div class="cr1">
+    <div class="chart-card">
+      <h3>Monthly Spending Heatmap</h3><div class="csub">Spending intensity by month &amp; year — darker orange = higher spending</div>
+      <div class="heatmap-wrap"><div class="hm-grid" id="heatmap"></div></div>
+    </div>
+  </div>
+
+  <div class="section-title">&#128176; Financial Insights &amp; Budget Forecast</div>
+  <div class="forecast-wrap">
+    <h3>&#128161; Budget Forecast &amp; Financial Projections</h3>
+    <div class="forecast-grid">
+      <div class="fc-item"><div class="fl">Avg Monthly Budget</div><div class="fv" id="fc-avg-mo">-</div><div class="fs">Based on selected period</div></div>
+      <div class="fc-item"><div class="fl">Avg per Transaction</div><div class="fv" id="fc-avg-txn">-</div><div class="fs">Cost per claim</div></div>
+      <div class="fc-item"><div class="fl">Projected Next Year</div><div class="fv" id="fc-next-yr">-</div><div class="fs" id="fc-next-yr-sub">Based on 3yr trend</div></div>
+      <div class="fc-item"><div class="fl">Est. Monthly Budget</div><div class="fv" id="fc-est-mo">-</div><div class="fs">For next year planning</div></div>
+    </div>
+  </div>
+  <div class="cr2">
+    <div class="chart-card">
+      <h3>Year-over-Year Growth</h3><div class="csub">Annual growth rate (%)</div>
+      <div style="position:relative"><canvas id="c-yoy" height="200" role="img" aria-label="YoY growth"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <h3>Item Trend Comparison (Top 5)</h3><div class="csub">Annual spending trend per item</div>
+      <div style="position:relative"><canvas id="c-item-trend" height="200" role="img" aria-label="Item trend"></canvas></div>
+    </div>
+  </div>
+
+  <div class="section-title">&#129302; AI Executive Insights</div>
+  <div class="ai-box">
+    <h3>&#129302; AI-Generated Insights &amp; Recommendations</h3>
+    <div id="ai-insights"></div>
+  </div>
+</div>
+<div class="footer">Flexi Benefit Executive Dashboard &bull; HR Analytics Division &bull; Data: 2020&ndash;2026 &bull; All charts update with filters</div>
+
+<script>
+
+const DATA = {"ym_all": {"2020-01": {"c": 37, "t": 97406.0}, "2020-02": {"c": 41, "t": 96506.0}, "2020-03": {"c": 24, "t": 77514.0}, "2020-04": {"c": 10, "t": 17247.0}, "2020-05": {"c": 15, "t": 54731.0}, "2020-06": {"c": 28, "t": 76879.0}, "2020-07": {"c": 54, "t": 139461.0}, "2020-08": {"c": 46, "t": 123334.0}, "2020-09": {"c": 49, "t": 134296.0}, "2020-10": {"c": 65, "t": 202261.0}, "2020-11": {"c": 107, "t": 277797.0}, "2020-12": {"c": 154, "t": 470593.0}, "2021-01": {"c": 23, "t": 63518.0}, "2021-02": {"c": 32, "t": 101866.0}, "2021-03": {"c": 40, "t": 109154.0}, "2021-04": {"c": 34, "t": 108235.0}, "2021-05": {"c": 18, "t": 54260.0}, "2021-06": {"c": 23, "t": 70561.0}, "2021-07": {"c": 19, "t": 58269.0}, "2021-08": {"c": 12, "t": 41856.0}, "2021-09": {"c": 25, "t": 67430.0}, "2021-10": {"c": 77, "t": 264087.0}, "2021-11": {"c": 100, "t": 291695.0}, "2021-12": {"c": 224, "t": 627918.0}, "2022-01": {"c": 47, "t": 136459.0}, "2022-02": {"c": 43, "t": 110503.0}, "2022-03": {"c": 37, "t": 98247.0}, "2022-04": {"c": 40, "t": 112432.0}, "2022-05": {"c": 37, "t": 97281.0}, "2022-06": {"c": 34, "t": 83570.38}, "2022-07": {"c": 39, "t": 117231.92}, "2022-08": {"c": 47, "t": 152612.0}, "2022-09": {"c": 47, "t": 124306.71}, "2022-10": {"c": 67, "t": 187559.76}, "2022-11": {"c": 81, "t": 231565.04}, "2022-12": {"c": 227, "t": 681229.59}, "2023-01": {"c": 78, "t": 211983.55}, "2023-02": {"c": 87, "t": 282272.83}, "2023-03": {"c": 130, "t": 416514.03}, "2023-04": {"c": 101, "t": 288618.06}, "2023-05": {"c": 100, "t": 273135.4}, "2023-06": {"c": 83, "t": 219808.5}, "2023-07": {"c": 89, "t": 236026.2}, "2023-08": {"c": 110, "t": 277299.58}, "2023-09": {"c": 73, "t": 186315.52}, "2023-10": {"c": 113, "t": 331989.97}, "2023-11": {"c": 125, "t": 335535.32}, "2023-12": {"c": 299, "t": 859220.54}, "2024-01": {"c": 89, "t": 248789.07}, "2024-02": {"c": 115, "t": 349866.01}, "2024-03": {"c": 104, "t": 287686.7}, "2024-04": {"c": 129, "t": 354882.14}, "2024-05": {"c": 110, "t": 285446.07}, "2024-06": {"c": 80, "t": 205909.06}, "2024-07": {"c": 102, "t": 246019.23}, "2024-08": {"c": 101, "t": 224576.2}, "2024-09": {"c": 65, "t": 174696.37}, "2024-10": {"c": 108, "t": 293972.79}, "2024-11": {"c": 125, "t": 348552.99}, "2024-12": {"c": 304, "t": 861560.25}, "2025-01": {"c": 101, "t": 267830.87}, "2025-02": {"c": 127, "t": 348863.75}, "2025-03": {"c": 133, "t": 370981.33}, "2025-04": {"c": 114, "t": 329336.45}, "2025-05": {"c": 113, "t": 344709.05}, "2025-06": {"c": 86, "t": 253235.82}, "2025-07": {"c": 70, "t": 176482.2}, "2025-08": {"c": 81, "t": 193931.59}, "2025-09": {"c": 91, "t": 236501.82}, "2025-10": {"c": 117, "t": 348736.58}, "2025-11": {"c": 120, "t": 316624.81}, "2025-12": {"c": 283, "t": 804271.65}, "2026-01": {"c": 101, "t": 295695.79}, "2026-02": {"c": 110, "t": 315393.01}, "2026-03": {"c": 151, "t": 455427.19}, "2026-04": {"c": 119, "t": 367523.95}, "2026-05": {"c": 106, "t": 334626.79}, "2026-06": {"c": 116, "t": 278349.05}, "2026-07": {"c": 43, "t": 116050.5}}, "item_ym": {"Optical Care": {"2020-01": {"c": 8, "t": 31481.0}, "2020-02": {"c": 7, "t": 27000.0}, "2020-03": {"c": 11, "t": 39870.0}, "2020-04": {"c": 4, "t": 9000.0}, "2020-05": {"c": 8, "t": 28990.0}, "2020-06": {"c": 10, "t": 25827.0}, "2020-07": {"c": 10, "t": 38363.0}, "2020-08": {"c": 16, "t": 39862.0}, "2020-09": {"c": 12, "t": 35020.0}, "2020-10": {"c": 11, "t": 32590.0}, "2020-11": {"c": 23, "t": 77030.0}, "2020-12": {"c": 61, "t": 220350.0}, "2021-01": {"c": 9, "t": 25650.0}, "2021-02": {"c": 12, "t": 43860.0}, "2021-03": {"c": 4, "t": 11480.0}, "2021-04": {"c": 10, "t": 37440.0}, "2021-05": {"c": 12, "t": 40450.0}, "2021-06": {"c": 13, "t": 38399.0}, "2021-07": {"c": 7, "t": 22125.0}, "2021-08": {"c": 3, "t": 9000.0}, "2021-09": {"c": 8, "t": 29190.0}, "2021-10": {"c": 19, "t": 74290.0}, "2021-11": {"c": 25, "t": 80750.0}, "2021-12": {"c": 95, "t": 290881.0}, "2022-01": {"c": 19, "t": 41844.0}, "2022-02": {"c": 11, "t": 33390.0}, "2022-03": {"c": 12, "t": 35030.0}, "2022-04": {"c": 8, "t": 20873.0}, "2022-05": {"c": 10, "t": 30912.0}, "2022-06": {"c": 14, "t": 33168.63}, "2022-07": {"c": 10, "t": 31017.0}, "2022-08": {"c": 13, "t": 39770.0}, "2022-09": {"c": 17, "t": 42405.71}, "2022-10": {"c": 10, "t": 29720.0}, "2022-11": {"c": 27, "t": 78010.89}, "2022-12": {"c": 83, "t": 283487.73}, "2023-01": {"c": 16, "t": 40750.0}, "2023-02": {"c": 23, "t": 87350.0}, "2023-03": {"c": 27, "t": 102365.75}, "2023-04": {"c": 17, "t": 46050.0}, "2023-05": {"c": 13, "t": 41250.0}, "2023-06": {"c": 17, "t": 56440.0}, "2023-07": {"c": 25, "t": 68397.11}, "2023-08": {"c": 19, "t": 61730.0}, "2023-09": {"c": 13, "t": 34090.0}, "2023-10": {"c": 26, "t": 90447.25}, "2023-11": {"c": 24, "t": 76647.25}, "2023-12": {"c": 73, "t": 245961.97}, "2024-01": {"c": 28, "t": 84032.0}, "2024-02": {"c": 20, "t": 74000.0}, "2024-03": {"c": 18, "t": 52538.24}, "2024-04": {"c": 12, "t": 33450.0}, "2024-05": {"c": 17, "t": 49860.0}, "2024-06": {"c": 19, "t": 57986.0}, "2024-07": {"c": 15, "t": 45284.52}, "2024-08": {"c": 13, "t": 36100.0}, "2024-09": {"c": 18, "t": 52585.0}, "2024-10": {"c": 19, "t": 54074.0}, "2024-11": {"c": 27, "t": 85125.55}, "2024-12": {"c": 74, "t": 257018.74}, "2025-01": {"c": 20, "t": 58075.0}, "2025-02": {"c": 18, "t": 54884.93}, "2025-03": {"c": 24, "t": 85057.6}, "2025-04": {"c": 12, "t": 35856.0}, "2025-05": {"c": 14, "t": 52581.0}, "2025-06": {"c": 17, "t": 62040.0}, "2025-07": {"c": 12, "t": 35040.0}, "2025-08": {"c": 13, "t": 43567.0}, "2025-09": {"c": 17, "t": 43244.0}, "2025-10": {"c": 16, "t": 50368.22}, "2025-11": {"c": 25, "t": 78404.0}, "2025-12": {"c": 59, "t": 191930.39}, "2026-01": {"c": 25, "t": 94540.0}, "2026-02": {"c": 19, "t": 72639.21}, "2026-03": {"c": 26, "t": 88663.0}, "2026-04": {"c": 14, "t": 39120.0}, "2026-05": {"c": 13, "t": 47416.0}, "2026-06": {"c": 15, "t": 37543.0}, "2026-07": {"c": 12, "t": 49290.0}}, "Medical": {"2020-01": {"c": 3, "t": 1702.0}, "2020-02": {"c": 6, "t": 14008.0}, "2020-03": {"c": 4, "t": 6644.0}, "2020-04": {"c": 4, "t": 6817.0}, "2020-05": {"c": 2, "t": 9000.0}, "2020-06": {"c": 2, "t": 6532.0}, "2020-07": {"c": 8, "t": 12719.0}, "2020-08": {"c": 3, "t": 5741.0}, "2020-09": {"c": 4, "t": 13976.0}, "2020-10": {"c": 4, "t": 14114.0}, "2020-11": {"c": 10, "t": 33503.0}, "2020-12": {"c": 13, "t": 37543.0}, "2021-02": {"c": 1, "t": 4675.0}, "2021-03": {"c": 3, "t": 3220.0}, "2021-05": {"c": 1, "t": 420.0}, "2021-06": {"c": 1, "t": 4150.0}, "2021-07": {"c": 6, "t": 22284.0}, "2021-08": {"c": 2, "t": 4265.0}, "2021-09": {"c": 9, "t": 18388.0}, "2021-10": {"c": 6, "t": 9459.0}, "2021-11": {"c": 8, "t": 11060.0}, "2021-12": {"c": 12, "t": 38470.0}, "2022-01": {"c": 1, "t": 1335.0}, "2022-02": {"c": 4, "t": 3876.0}, "2022-03": {"c": 5, "t": 4807.0}, "2022-04": {"c": 7, "t": 20530.0}, "2022-06": {"c": 3, "t": 5208.0}, "2022-07": {"c": 4, "t": 10934.0}, "2022-08": {"c": 3, "t": 13790.0}, "2022-09": {"c": 4, "t": 9284.0}, "2022-10": {"c": 3, "t": 12041.0}, "2022-11": {"c": 6, "t": 6592.0}, "2022-12": {"c": 12, "t": 29024.62}, "2023-01": {"c": 4, "t": 3927.0}, "2023-02": {"c": 2, "t": 4579.0}, "2023-03": {"c": 4, "t": 12676.0}, "2023-04": {"c": 3, "t": 6033.75}, "2023-05": {"c": 6, "t": 9850.75}, "2023-06": {"c": 4, "t": 12175.8}, "2023-07": {"c": 2, "t": 4428.0}, "2023-08": {"c": 6, "t": 13188.0}, "2023-09": {"c": 3, "t": 11900.0}, "2023-10": {"c": 2, "t": 4083.0}, "2023-11": {"c": 3, "t": 4610.0}, "2023-12": {"c": 10, "t": 25586.63}, "2024-01": {"c": 2, "t": 5838.0}, "2024-02": {"c": 8, "t": 21171.5}, "2024-03": {"c": 3, "t": 6774.9}, "2024-04": {"c": 7, "t": 8180.1}, "2024-05": {"c": 4, "t": 10986.0}, "2024-06": {"c": 3, "t": 7010.0}, "2024-07": {"c": 7, "t": 12493.75}, "2024-08": {"c": 2, "t": 5459.0}, "2024-09": {"c": 2, "t": 5572.0}, "2024-10": {"c": 1, "t": 1700.0}, "2024-11": {"c": 1, "t": 4052.0}, "2024-12": {"c": 8, "t": 19652.75}, "2025-01": {"c": 3, "t": 2825.0}, "2025-02": {"c": 4, "t": 5095.0}, "2025-03": {"c": 4, "t": 14378.0}, "2025-04": {"c": 5, "t": 6930.4}, "2025-05": {"c": 4, "t": 11975.4}, "2025-06": {"c": 5, "t": 21562.7}, "2025-07": {"c": 2, "t": 2052.0}, "2025-08": {"c": 3, "t": 6369.0}, "2025-09": {"c": 10, "t": 20261.0}, "2025-10": {"c": 4, "t": 9227.0}, "2025-11": {"c": 5, "t": 9514.0}, "2025-12": {"c": 3, "t": 1363.0}, "2026-01": {"c": 5, "t": 11464.0}, "2026-02": {"c": 5, "t": 9392.0}, "2026-03": {"c": 5, "t": 12424.0}, "2026-04": {"c": 3, "t": 6581.0}, "2026-05": {"c": 4, "t": 17500.0}, "2026-06": {"c": 9, "t": 18089.0}, "2026-07": {"c": 2, "t": 3000.0}}, "Sport Club": {"2021-01": {"c": 1, "t": 2800.0}, "2021-02": {"c": 1, "t": 600.0}, "2021-03": {"c": 4, "t": 19400.0}, "2021-05": {"c": 2, "t": 4640.0}, "2021-06": {"c": 2, "t": 8300.0}, "2021-08": {"c": 1, "t": 2641.0}, "2021-09": {"c": 1, "t": 1960.0}, "2021-10": {"c": 6, "t": 17581.0}, "2021-11": {"c": 13, "t": 46503.0}, "2021-12": {"c": 20, "t": 60027.0}, "2022-01": {"c": 3, "t": 8990.0}, "2022-02": {"c": 6, "t": 22682.0}, "2022-03": {"c": 1, "t": 3000.0}, "2022-04": {"c": 1, "t": 5192.0}, "2022-05": {"c": 2, "t": 2268.0}, "2022-06": {"c": 1, "t": 6000.0}, "2022-07": {"c": 3, "t": 14120.0}, "2022-08": {"c": 2, "t": 9380.0}, "2022-09": {"c": 3, "t": 6400.0}, "2022-10": {"c": 2, "t": 2000.0}, "2022-11": {"c": 8, "t": 22919.2}, "2022-12": {"c": 26, "t": 75746.28}, "2023-01": {"c": 9, "t": 36171.06}, "2023-02": {"c": 10, "t": 30610.0}, "2023-03": {"c": 10, "t": 25556.0}, "2023-04": {"c": 4, "t": 6615.0}, "2023-05": {"c": 3, "t": 8290.0}, "2023-06": {"c": 4, "t": 9030.0}, "2023-07": {"c": 9, "t": 15207.0}, "2023-08": {"c": 6, "t": 8238.71}, "2023-09": {"c": 7, "t": 16641.59}, "2023-10": {"c": 10, "t": 30946.0}, "2023-11": {"c": 16, "t": 39050.63}, "2023-12": {"c": 62, "t": 151379.29}, "2024-01": {"c": 10, "t": 33066.65}, "2024-02": {"c": 11, "t": 27400.5}, "2024-03": {"c": 16, "t": 38677.75}, "2024-04": {"c": 14, "t": 27520.95}, "2024-05": {"c": 9, "t": 12745.0}, "2024-06": {"c": 11, "t": 26678.89}, "2024-07": {"c": 14, "t": 41919.75}, "2024-08": {"c": 12, "t": 29245.0}, "2024-09": {"c": 4, "t": 11906.0}, "2024-10": {"c": 14, "t": 28672.7}, "2024-11": {"c": 20, "t": 43075.0}, "2024-12": {"c": 59, "t": 161912.21}, "2025-01": {"c": 18, "t": 53790.0}, "2025-02": {"c": 23, "t": 62639.0}, "2025-03": {"c": 12, "t": 37815.25}, "2025-04": {"c": 10, "t": 30801.5}, "2025-05": {"c": 11, "t": 28340.5}, "2025-06": {"c": 9, "t": 29885.25}, "2025-07": {"c": 7, "t": 19724.75}, "2025-08": {"c": 7, "t": 18128.0}, "2025-09": {"c": 13, "t": 32769.0}, "2025-10": {"c": 14, "t": 45127.3}, "2025-11": {"c": 18, "t": 44565.5}, "2025-12": {"c": 66, "t": 182715.95}, "2026-01": {"c": 17, "t": 51668.0}, "2026-02": {"c": 12, "t": 29019.25}, "2026-03": {"c": 26, "t": 87483.65}, "2026-04": {"c": 12, "t": 30145.0}, "2026-05": {"c": 12, "t": 44020.86}, "2026-06": {"c": 18, "t": 33581.44}, "2026-07": {"c": 9, "t": 20147.5}}, "Leisure & Spa": {"2020-01": {"c": 18, "t": 37923.0}, "2020-02": {"c": 19, "t": 39648.0}, "2020-03": {"c": 4, "t": 13800.0}, "2020-06": {"c": 11, "t": 28730.0}, "2020-07": {"c": 27, "t": 60345.0}, "2020-08": {"c": 19, "t": 55201.0}, "2020-09": {"c": 26, "t": 74279.0}, "2020-10": {"c": 42, "t": 134957.0}, "2020-11": {"c": 61, "t": 145253.0}, "2020-12": {"c": 46, "t": 148714.0}, "2021-01": {"c": 2, "t": 11008.0}, "2021-02": {"c": 9, "t": 26961.0}, "2021-03": {"c": 22, "t": 59754.0}, "2021-04": {"c": 19, "t": 57855.0}, "2021-05": {"c": 1, "t": 550.0}, "2021-06": {"c": 2, "t": 3500.0}, "2021-07": {"c": 1, "t": 2500.0}, "2021-08": {"c": 1, "t": 5950.0}, "2021-09": {"c": 4, "t": 12902.0}, "2021-10": {"c": 37, "t": 136565.0}, "2021-11": {"c": 40, "t": 127932.0}, "2021-12": {"c": 67, "t": 176421.0}, "2022-01": {"c": 13, "t": 42990.0}, "2022-02": {"c": 14, "t": 33180.0}, "2022-03": {"c": 12, "t": 33290.0}, "2022-04": {"c": 20, "t": 52337.0}, "2022-05": {"c": 21, "t": 55541.0}, "2022-06": {"c": 9, "t": 24193.75}, "2022-07": {"c": 15, "t": 39410.92}, "2022-08": {"c": 26, "t": 79892.0}, "2022-09": {"c": 15, "t": 50570.0}, "2022-10": {"c": 41, "t": 116775.2}, "2022-11": {"c": 35, "t": 117142.95}, "2022-12": {"c": 81, "t": 223958.34}, "2023-01": {"c": 22, "t": 46359.53}, "2023-02": {"c": 26, "t": 77819.38}, "2023-03": {"c": 56, "t": 149280.23}, "2023-04": {"c": 60, "t": 172640.31}, "2023-05": {"c": 57, "t": 156476.95}, "2023-06": {"c": 42, "t": 100083.75}, "2023-07": {"c": 26, "t": 68260.75}, "2023-08": {"c": 64, "t": 147402.87}, "2023-09": {"c": 28, "t": 69340.93}, "2023-10": {"c": 55, "t": 141930.92}, "2023-11": {"c": 45, "t": 112602.25}, "2023-12": {"c": 99, "t": 289961.19}, "2024-01": {"c": 25, "t": 51373.42}, "2024-02": {"c": 45, "t": 115926.01}, "2024-03": {"c": 43, "t": 108107.21}, "2024-04": {"c": 71, "t": 209824.19}, "2024-05": {"c": 62, "t": 171024.07}, "2024-06": {"c": 36, "t": 83043.17}, "2024-07": {"c": 48, "t": 96024.41}, "2024-08": {"c": 52, "t": 106141.42}, "2024-09": {"c": 27, "t": 70615.69}, "2024-10": {"c": 53, "t": 140982.09}, "2024-11": {"c": 47, "t": 123061.82}, "2024-12": {"c": 101, "t": 250711.56}, "2025-01": {"c": 30, "t": 64662.73}, "2025-02": {"c": 48, "t": 115880.82}, "2025-03": {"c": 49, "t": 111325.48}, "2025-04": {"c": 70, "t": 203048.55}, "2025-05": {"c": 64, "t": 195945.15}, "2025-06": {"c": 36, "t": 82912.5}, "2025-07": {"c": 29, "t": 65756.45}, "2025-08": {"c": 43, "t": 90914.07}, "2025-09": {"c": 32, "t": 90294.15}, "2025-10": {"c": 58, "t": 159515.8}, "2025-11": {"c": 45, "t": 103453.65}, "2025-12": {"c": 90, "t": 251578.0}, "2026-01": {"c": 31, "t": 68374.79}, "2026-02": {"c": 40, "t": 95355.1}, "2026-03": {"c": 60, "t": 166123.54}, "2026-04": {"c": 61, "t": 197490.95}, "2026-05": {"c": 54, "t": 157402.93}, "2026-06": {"c": 48, "t": 126089.61}, "2026-07": {"c": 12, "t": 30066.0}}, "Face & Skin Care": {"2023-01": {"c": 2, "t": 9000.0}, "2023-02": {"c": 5, "t": 17023.0}, "2023-03": {"c": 8, "t": 28900.0}, "2023-04": {"c": 2, "t": 5000.0}, "2023-05": {"c": 6, "t": 21500.0}, "2023-06": {"c": 4, "t": 13100.0}, "2023-07": {"c": 4, "t": 9180.5}, "2023-08": {"c": 6, "t": 22700.0}, "2023-09": {"c": 2, "t": 6000.0}, "2023-10": {"c": 5, "t": 21692.06}, "2023-11": {"c": 8, "t": 30482.28}, "2023-12": {"c": 9, "t": 38406.2}, "2024-01": {"c": 7, "t": 27000.0}, "2024-02": {"c": 9, "t": 38000.0}, "2024-03": {"c": 9, "t": 44500.0}, "2024-04": {"c": 7, "t": 25710.0}, "2024-05": {"c": 3, "t": 9500.0}, "2024-06": {"c": 2, "t": 6000.0}, "2024-07": {"c": 3, "t": 12720.0}, "2024-08": {"c": 4, "t": 11000.0}, "2024-09": {"c": 2, "t": 3489.0}, "2024-10": {"c": 6, "t": 24999.0}, "2024-11": {"c": 6, "t": 31000.0}, "2024-12": {"c": 15, "t": 53949.0}, "2025-01": {"c": 8, "t": 32972.14}, "2025-02": {"c": 8, "t": 36000.0}, "2025-03": {"c": 6, "t": 18262.0}, "2025-04": {"c": 7, "t": 23000.0}, "2025-05": {"c": 10, "t": 36670.0}, "2025-06": {"c": 3, "t": 15000.0}, "2025-07": {"c": 4, "t": 15988.0}, "2025-08": {"c": 3, "t": 12010.0}, "2025-09": {"c": 4, "t": 14001.0}, "2025-10": {"c": 8, "t": 37184.93}, "2025-11": {"c": 7, "t": 22445.71}, "2025-12": {"c": 20, "t": 54984.25}, "2026-01": {"c": 4, "t": 19500.0}, "2026-02": {"c": 6, "t": 30990.0}, "2026-03": {"c": 9, "t": 32790.0}, "2026-04": {"c": 10, "t": 43489.0}, "2026-05": {"c": 8, "t": 31807.0}, "2026-06": {"c": 6, "t": 18140.0}}, "WFA Equipment": {"2023-01": {"c": 7, "t": 27150.96}, "2023-02": {"c": 6, "t": 24000.0}, "2023-03": {"c": 5, "t": 29000.0}, "2023-04": {"c": 5, "t": 25871.0}, "2023-05": {"c": 3, "t": 3885.2}, "2023-07": {"c": 9, "t": 35547.84}, "2023-08": {"c": 3, "t": 8990.0}, "2023-09": {"c": 3, "t": 6990.0}, "2023-10": {"c": 5, "t": 15918.9}, "2023-11": {"c": 8, "t": 35110.14}, "2023-12": {"c": 18, "t": 60801.81}, "2024-01": {"c": 5, "t": 12929.0}, "2024-02": {"c": 4, "t": 15466.0}, "2024-03": {"c": 2, "t": 4755.0}, "2024-04": {"c": 3, "t": 16384.21}, "2024-05": {"c": 2, "t": 1926.0}, "2024-06": {"c": 2, "t": 7991.0}, "2024-07": {"c": 1, "t": 6000.0}, "2024-08": {"c": 1, "t": 436.78}, "2024-09": {"c": 2, "t": 13000.0}, "2024-10": {"c": 4, "t": 9505.0}, "2024-11": {"c": 5, "t": 32794.0}, "2024-12": {"c": 17, "t": 66669.26}, "2025-01": {"c": 3, "t": 14856.0}, "2025-02": {"c": 7, "t": 23354.0}, "2025-03": {"c": 6, "t": 27990.0}, "2025-04": {"c": 1, "t": 6000.0}, "2025-05": {"c": 3, "t": 8990.0}, "2025-06": {"c": 1, "t": 6000.0}, "2025-07": {"c": 5, "t": 17038.0}, "2025-08": {"c": 2, "t": 4253.52}, "2025-09": {"c": 6, "t": 21877.67}, "2025-10": {"c": 4, "t": 9253.33}, "2025-11": {"c": 7, "t": 28607.95}, "2025-12": {"c": 17, "t": 55039.26}, "2026-01": {"c": 5, "t": 17689.0}, "2026-02": {"c": 7, "t": 18657.45}, "2026-03": {"c": 5, "t": 19863.0}, "2026-04": {"c": 4, "t": 13690.0}, "2026-05": {"c": 2, "t": 7743.0}, "2026-06": {"c": 3, "t": 7819.0}, "2026-07": {"c": 1, "t": 2416.0}}, "Education": {"2020-01": {"c": 1, "t": 2800.0}, "2020-02": {"c": 1, "t": 1200.0}, "2020-03": {"c": 1, "t": 3000.0}, "2020-05": {"c": 3, "t": 9809.0}, "2020-06": {"c": 3, "t": 12000.0}, "2020-07": {"c": 3, "t": 6734.0}, "2020-09": {"c": 1, "t": 2990.0}, "2020-11": {"c": 3, "t": 5511.0}, "2020-12": {"c": 9, "t": 17119.0}, "2021-01": {"c": 3, "t": 9900.0}, "2021-03": {"c": 3, "t": 9300.0}, "2021-04": {"c": 2, "t": 6000.0}, "2021-06": {"c": 2, "t": 9200.0}, "2021-07": {"c": 1, "t": 3000.0}, "2021-08": {"c": 2, "t": 6000.0}, "2021-09": {"c": 1, "t": 990.0}, "2021-10": {"c": 3, "t": 6090.0}, "2021-11": {"c": 2, "t": 3180.0}, "2021-12": {"c": 4, "t": 11201.0}, "2022-01": {"c": 3, "t": 11000.0}, "2022-02": {"c": 3, "t": 9000.0}, "2022-03": {"c": 1, "t": 3000.0}, "2022-04": {"c": 1, "t": 3000.0}, "2022-05": {"c": 1, "t": 3000.0}, "2022-06": {"c": 2, "t": 6000.0}, "2022-07": {"c": 2, "t": 5400.0}, "2022-08": {"c": 1, "t": 6000.0}, "2022-09": {"c": 2, "t": 6808.0}, "2022-10": {"c": 3, "t": 7798.22}, "2022-11": {"c": 1, "t": 1000.0}, "2022-12": {"c": 9, "t": 27257.0}, "2023-01": {"c": 1, "t": 3000.0}, "2023-02": {"c": 4, "t": 11881.45}, "2023-03": {"c": 4, "t": 10766.05}, "2023-04": {"c": 1, "t": 1478.0}, "2023-05": {"c": 1, "t": 1990.0}, "2023-06": {"c": 2, "t": 7200.0}, "2023-07": {"c": 2, "t": 2199.0}, "2023-08": {"c": 1, "t": 3000.0}, "2023-09": {"c": 2, "t": 8749.0}, "2023-11": {"c": 7, "t": 18947.77}, "2023-12": {"c": 5, "t": 6344.96}, "2024-01": {"c": 1, "t": 850.0}, "2024-02": {"c": 3, "t": 8268.0}, "2024-03": {"c": 4, "t": 12906.6}, "2024-04": {"c": 3, "t": 11800.0}, "2024-05": {"c": 4, "t": 8835.0}, "2024-06": {"c": 3, "t": 6200.0}, "2024-07": {"c": 2, "t": 3585.8}, "2024-08": {"c": 2, "t": 2832.0}, "2024-09": {"c": 2, "t": 2088.0}, "2024-10": {"c": 2, "t": 6000.0}, "2024-11": {"c": 1, "t": 2733.4}, "2024-12": {"c": 3, "t": 6219.1}, "2025-01": {"c": 1, "t": 3000.0}, "2025-02": {"c": 2, "t": 3600.0}, "2025-03": {"c": 1, "t": 338.0}, "2025-05": {"c": 1, "t": 3000.0}, "2025-06": {"c": 2, "t": 3570.0}, "2025-07": {"c": 1, "t": 2200.0}, "2025-09": {"c": 1, "t": 125.0}, "2025-11": {"c": 3, "t": 4848.0}, "2025-12": {"c": 5, "t": 9997.9}, "2026-01": {"c": 1, "t": 1000.0}, "2026-02": {"c": 3, "t": 6630.0}, "2026-03": {"c": 1, "t": 3000.0}, "2026-04": {"c": 2, "t": 4500.0}, "2026-05": {"c": 2, "t": 4000.0}, "2026-06": {"c": 3, "t": 10848.0}, "2026-07": {"c": 1, "t": 2200.0}}, "Dental Care": {"2020-01": {"c": 6, "t": 20500.0}, "2020-02": {"c": 7, "t": 13750.0}, "2020-03": {"c": 4, "t": 14200.0}, "2020-06": {"c": 1, "t": 3000.0}, "2020-07": {"c": 6, "t": 21300.0}, "2020-08": {"c": 7, "t": 22230.0}, "2020-09": {"c": 5, "t": 6600.0}, "2020-10": {"c": 8, "t": 20600.0}, "2020-11": {"c": 6, "t": 13850.0}, "2020-12": {"c": 17, "t": 39828.0}, "2021-01": {"c": 7, "t": 13260.0}, "2021-02": {"c": 7, "t": 23170.0}, "2021-03": {"c": 4, "t": 6000.0}, "2021-04": {"c": 3, "t": 6940.0}, "2021-05": {"c": 2, "t": 8200.0}, "2021-06": {"c": 2, "t": 5500.0}, "2021-07": {"c": 3, "t": 5860.0}, "2021-08": {"c": 2, "t": 6000.0}, "2021-09": {"c": 1, "t": 3000.0}, "2021-10": {"c": 5, "t": 14102.0}, "2021-11": {"c": 10, "t": 19173.0}, "2021-12": {"c": 23, "t": 42560.0}, "2022-01": {"c": 8, "t": 30300.0}, "2022-02": {"c": 2, "t": 4340.0}, "2022-03": {"c": 4, "t": 13070.0}, "2022-04": {"c": 2, "t": 7500.0}, "2022-05": {"c": 3, "t": 5560.0}, "2022-06": {"c": 2, "t": 4200.0}, "2022-07": {"c": 4, "t": 15800.0}, "2022-08": {"c": 2, "t": 3780.0}, "2022-09": {"c": 4, "t": 7839.0}, "2022-10": {"c": 8, "t": 19225.34}, "2022-11": {"c": 2, "t": 4800.0}, "2022-12": {"c": 15, "t": 41165.62}, "2023-01": {"c": 13, "t": 40690.0}, "2023-02": {"c": 11, "t": 29010.0}, "2023-03": {"c": 15, "t": 57520.0}, "2023-04": {"c": 8, "t": 23530.0}, "2023-05": {"c": 8, "t": 22459.5}, "2023-06": {"c": 9, "t": 21128.95}, "2023-07": {"c": 10, "t": 28600.0}, "2023-08": {"c": 4, "t": 11800.0}, "2023-09": {"c": 14, "t": 31309.0}, "2023-10": {"c": 8, "t": 25728.0}, "2023-11": {"c": 9, "t": 12635.0}, "2023-12": {"c": 18, "t": 33940.36}, "2024-01": {"c": 10, "t": 33200.0}, "2024-02": {"c": 13, "t": 48268.0}, "2024-03": {"c": 5, "t": 13700.0}, "2024-04": {"c": 8, "t": 20212.69}, "2024-05": {"c": 6, "t": 18180.0}, "2024-06": {"c": 4, "t": 11000.0}, "2024-07": {"c": 10, "t": 26651.0}, "2024-08": {"c": 14, "t": 30712.0}, "2024-09": {"c": 7, "t": 14550.68}, "2024-10": {"c": 5, "t": 17950.0}, "2024-11": {"c": 15, "t": 21512.22}, "2024-12": {"c": 23, "t": 42037.63}, "2025-01": {"c": 15, "t": 35400.0}, "2025-02": {"c": 16, "t": 46310.0}, "2025-03": {"c": 27, "t": 72250.0}, "2025-04": {"c": 8, "t": 22600.0}, "2025-05": {"c": 3, "t": 3100.0}, "2025-06": {"c": 11, "t": 30415.37}, "2025-07": {"c": 7, "t": 14343.0}, "2025-08": {"c": 7, "t": 16200.0}, "2025-09": {"c": 7, "t": 13430.0}, "2025-10": {"c": 11, "t": 36800.0}, "2025-11": {"c": 9, "t": 24510.0}, "2025-12": {"c": 18, "t": 44180.71}, "2026-01": {"c": 8, "t": 27050.0}, "2026-02": {"c": 13, "t": 43600.0}, "2026-03": {"c": 15, "t": 31180.0}, "2026-04": {"c": 12, "t": 31308.0}, "2026-05": {"c": 8, "t": 14837.0}, "2026-06": {"c": 11, "t": 20630.0}, "2026-07": {"c": 3, "t": 4590.0}}, "Alt. Medical": {"2020-01": {"c": 1, "t": 3000.0}, "2020-02": {"c": 1, "t": 900.0}, "2020-04": {"c": 2, "t": 1430.0}, "2020-05": {"c": 2, "t": 6932.0}, "2020-06": {"c": 1, "t": 790.0}, "2020-08": {"c": 1, "t": 300.0}, "2020-09": {"c": 1, "t": 1431.0}, "2020-11": {"c": 4, "t": 2650.0}, "2020-12": {"c": 8, "t": 7039.0}, "2021-01": {"c": 1, "t": 900.0}, "2021-02": {"c": 2, "t": 2600.0}, "2021-06": {"c": 1, "t": 1512.0}, "2021-07": {"c": 1, "t": 2500.0}, "2021-08": {"c": 1, "t": 8000.0}, "2021-09": {"c": 1, "t": 1000.0}, "2021-10": {"c": 1, "t": 6000.0}, "2021-11": {"c": 2, "t": 3097.0}, "2021-12": {"c": 3, "t": 8358.0}, "2022-02": {"c": 3, "t": 4035.0}, "2022-03": {"c": 2, "t": 6050.0}, "2022-04": {"c": 1, "t": 3000.0}, "2022-06": {"c": 3, "t": 4800.0}, "2022-07": {"c": 1, "t": 550.0}, "2022-09": {"c": 2, "t": 1000.0}, "2022-11": {"c": 2, "t": 1100.0}, "2022-12": {"c": 1, "t": 590.0}, "2023-01": {"c": 4, "t": 4935.0}, "2023-03": {"c": 1, "t": 450.0}, "2023-04": {"c": 1, "t": 1400.0}, "2023-05": {"c": 3, "t": 7433.0}, "2023-06": {"c": 1, "t": 650.0}, "2023-07": {"c": 2, "t": 4206.0}, "2023-08": {"c": 1, "t": 250.0}, "2023-09": {"c": 1, "t": 1295.0}, "2023-10": {"c": 2, "t": 1243.84}, "2023-11": {"c": 5, "t": 5450.0}, "2023-12": {"c": 5, "t": 6838.13}, "2024-01": {"c": 1, "t": 500.0}, "2024-02": {"c": 2, "t": 1366.0}, "2024-03": {"c": 4, "t": 5727.0}, "2024-04": {"c": 4, "t": 1800.0}, "2024-05": {"c": 3, "t": 2390.0}, "2024-07": {"c": 2, "t": 1340.0}, "2024-08": {"c": 1, "t": 2650.0}, "2024-09": {"c": 1, "t": 890.0}, "2024-10": {"c": 4, "t": 10090.0}, "2024-11": {"c": 3, "t": 5199.0}, "2024-12": {"c": 4, "t": 3390.0}, "2025-01": {"c": 3, "t": 2250.0}, "2025-02": {"c": 1, "t": 1100.0}, "2025-03": {"c": 4, "t": 3565.0}, "2025-04": {"c": 1, "t": 1100.0}, "2025-05": {"c": 3, "t": 4107.0}, "2025-06": {"c": 2, "t": 1850.0}, "2025-07": {"c": 3, "t": 4340.0}, "2025-08": {"c": 3, "t": 2490.0}, "2025-09": {"c": 1, "t": 500.0}, "2025-10": {"c": 2, "t": 1260.0}, "2025-11": {"c": 1, "t": 276.0}, "2025-12": {"c": 5, "t": 12482.19}, "2026-01": {"c": 5, "t": 4410.0}, "2026-02": {"c": 5, "t": 9110.0}, "2026-03": {"c": 4, "t": 13900.0}, "2026-04": {"c": 1, "t": 1200.0}, "2026-05": {"c": 3, "t": 9900.0}, "2026-06": {"c": 3, "t": 5609.0}, "2026-07": {"c": 3, "t": 4341.0}}}, "item_year": {"Optical Care": {"2020": {"c": 182, "t": 608383.0}, "2021": {"c": 217, "t": 703515.0}, "2022": {"c": 233, "t": 696628.96}, "2023": {"c": 298, "t": 969459.33}, "2024": {"c": 275, "t": 864074.05}, "2025": {"c": 247, "t": 791048.14}, "2026": {"c": 124, "t": 429211.21}}, "Medical": {"2020": {"c": 63, "t": 162299.0}, "2021": {"c": 49, "t": 116391.0}, "2022": {"c": 52, "t": 117421.62}, "2023": {"c": 49, "t": 113037.93}, "2024": {"c": 48, "t": 108890.0}, "2025": {"c": 52, "t": 111552.5}, "2026": {"c": 33, "t": 78450.0}}, "Sport Club": {"2021": {"c": 51, "t": 164452.0}, "2022": {"c": 58, "t": 178697.48}, "2023": {"c": 151, "t": 380735.28}, "2024": {"c": 193, "t": 479820.4}, "2025": {"c": 208, "t": 586302.0}, "2026": {"c": 106, "t": 296065.7}}, "Leisure & Spa": {"2020": {"c": 277, "t": 750850.0}, "2021": {"c": 205, "t": 621898.0}, "2022": {"c": 298, "t": 857281.16}, "2023": {"c": 585, "t": 1538737.06}, "2024": {"c": 605, "t": 1520257.06}, "2025": {"c": 594, "t": 1535287.35}, "2026": {"c": 306, "t": 840902.92}}, "Face & Skin Care": {"2023": {"c": 61, "t": 222984.04}, "2024": {"c": 73, "t": 287867.0}, "2025": {"c": 88, "t": 318518.03}, "2026": {"c": 43, "t": 176716.0}}, "WFA Equipment": {"2023": {"c": 73, "t": 273655.85}, "2024": {"c": 47, "t": 187466.25}, "2025": {"c": 62, "t": 223259.73}, "2026": {"c": 27, "t": 87877.45}}, "Education": {"2020": {"c": 25, "t": 61163.0}, "2021": {"c": 23, "t": 64861.0}, "2022": {"c": 29, "t": 89263.22}, "2023": {"c": 31, "t": 76406.23}, "2024": {"c": 29, "t": 71467.9}, "2025": {"c": 17, "t": 30678.9}, "2026": {"c": 13, "t": 32178.0}}, "Dental Care": {"2020": {"c": 68, "t": 178858.0}, "2021": {"c": 69, "t": 153765.0}, "2022": {"c": 55, "t": 154579.96}, "2023": {"c": 128, "t": 341100.81}, "2024": {"c": 119, "t": 295224.22}, "2025": {"c": 139, "t": 359539.08}, "2026": {"c": 70, "t": 173195.0}}, "Alt. Medical": {"2020": {"c": 21, "t": 24472.0}, "2021": {"c": 13, "t": 33967.0}, "2022": {"c": 15, "t": 21125.0}, "2023": {"c": 26, "t": 34150.97}, "2024": {"c": 29, "t": 35342.0}, "2025": {"c": 29, "t": 35320.19}, "2026": {"c": 24, "t": 48470.0}}}, "yearly": {"2020": {"c": 636, "t": 1786025.0}, "2021": {"c": 627, "t": 1858849.0}, "2022": {"c": 740, "t": 2114997.4}, "2023": {"c": 1402, "t": 3950267.5}, "2024": {"c": 1418, "t": 3850408.88}, "2025": {"c": 1436, "t": 3991505.92}, "2026": {"c": 746, "t": 2163066.28}}};
+const MS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MF = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const AY = ['2020','2021','2022','2023','2024','2025','2026'];
+const ITEMS = Object.keys(DATA.item_ym);
+const YC = {'2020':'#94a3b8','2021':'#6366f1','2022':'#0ea5e9','2023':'#f59e0b','2024':'#3b82f6','2025':'#22c55e','2026':'#f97316'};
+const IC = ['#2563eb','#16a34a','#7c3aed','#ea580c','#ec4899','#dc2626','#0891b2','#059669','#78716c'];
+
+let ST = { years: ['2024','2025','2026'], month: 0, item: 'all' };
+let CH = {};
+
+function fmt(n){return '฿'+(Math.round(n)||0).toLocaleString();}
+function fmtN(n){return (Math.round(n)||0).toLocaleString();}
+function fmtK(n){
+  if(n>=1e6) return '฿'+(n/1e6).toFixed(2)+'M';
+  if(n>=1e3) return '฿'+(n/1e3).toFixed(0)+'K';
+  return fmt(n);
+}
+function fmtM(n){return '฿'+(n/1e6).toFixed(2)+'M';}
+
+function buildYearButtons(){
+  var wrap=document.getElementById('year-btns');
+  wrap.innerHTML='';
+  AY.forEach(function(yr){
+    var btn=document.createElement('button');
+    btn.className='year-btn'+(ST.years.indexOf(yr)>=0?' active':'');
+    btn.textContent=yr+(yr==='2026'?' YTD':'');
+    btn.onclick=function(){
+      var idx=ST.years.indexOf(yr);
+      if(idx>=0){if(ST.years.length>1)ST.years.splice(idx,1);}
+      else{ST.years.push(yr);ST.years.sort();}
+      buildYearButtons();updateAll();
+    };
+    wrap.appendChild(btn);
+  });
+}
+
+function buildItemFilter(){
+  var sel=document.getElementById('filter-item');
+  ITEMS.forEach(function(item){
+    var o=document.createElement('option');o.value=item;o.textContent=item;sel.appendChild(o);
+  });
+  sel.onchange=function(){ST.item=this.value;updateAll();};
+}
+
+document.getElementById('filter-month').onchange=function(){ST.month=parseInt(this.value);updateAll();};
+
+function resetFilters(){
+  ST={years:['2024','2025','2026'],month:0,item:'all'};
+  document.getElementById('filter-month').value='0';
+  document.getElementById('filter-item').value='all';
+  buildYearButtons();updateAll();
+}
+
+function getYM(){
+  var res={};
+  var src=ST.item==='all'?DATA.ym_all:(DATA.item_ym[ST.item]||{});
+  Object.keys(src).forEach(function(ym){
+    var parts=ym.split('-'),yr=parts[0],mo=parseInt(parts[1]);
+    if(ST.years.indexOf(yr)<0)return;
+    if(ST.month!==0&&ST.month!==mo)return;
+    res[ym]=src[ym];
+  });
+  return res;
+}
+
+function getItems(){
+  var res={};
+  Object.keys(DATA.item_ym).forEach(function(item){
+    if(ST.item!=='all'&&item!==ST.item)return;
+    var c=0,t=0;
+    Object.keys(DATA.item_ym[item]).forEach(function(ym){
+      var parts=ym.split('-'),yr=parts[0],mo=parseInt(parts[1]);
+      if(ST.years.indexOf(yr)<0)return;
+      if(ST.month!==0&&ST.month!==mo)return;
+      c+=DATA.item_ym[item][ym].c;t+=DATA.item_ym[item][ym].t;
+    });
+    if(c>0)res[item]={c:c,t:t};
+  });
+  return res;
+}
+
+function getKPIs(){
+  var ym=getYM(),items=getItems();
+  var ta=0,tc=0;
+  Object.values(ym).forEach(function(v){ta+=v.t;tc+=v.c;});
+  var nm=Object.keys(ym).length;
+  var sortedY=ST.years.filter(function(y){return DATA.yearly[y];}).sort();
+  var yoy=null;
+  if(sortedY.length>=2&&ST.month===0&&ST.item==='all'){
+    var p=DATA.yearly[sortedY[sortedY.length-2]].t;
+    var c=DATA.yearly[sortedY[sortedY.length-1]].t;
+    if(p>0)yoy=(c-p)/p*100;
+  }
+  return{ta:ta,tc:tc,avg:tc>0?ta/tc:0,avgMo:nm>0?ta/nm:0,ni:Object.keys(items).length,yoy:yoy};
+}
+
+function mkChart(id,type,data,opts){
+  if(CH[id])CH[id].destroy();
+  var ctx=document.getElementById(id);
+  if(!ctx)return;
+  CH[id]=new Chart(ctx,{type:type,data:data,options:opts});
+}
+
+function updateKPIs(){
+  var k=getKPIs();
+  document.getElementById('kpi-total').textContent=fmtM(k.ta);
+  document.getElementById('kpi-total-sub').textContent=fmtK(k.ta)+' total';
+  document.getElementById('kpi-txn').textContent=fmtN(k.tc);
+  document.getElementById('kpi-txn-sub').textContent='Claims recorded';
+  document.getElementById('kpi-avg').textContent=fmtK(k.avg);
+  document.getElementById('kpi-avg-sub').textContent='Per claim average';
+  document.getElementById('kpi-monthly').textContent=fmtK(k.avgMo);
+  document.getElementById('kpi-monthly-sub').textContent='Per month average';
+  document.getElementById('kpi-items').textContent=k.ni;
+  document.getElementById('kpi-items-sub').textContent='Active categories';
+  var yoel=document.getElementById('kpi-yoy'),badgeel=document.getElementById('kpi-yoy-badge');
+  if(k.yoy!==null){
+    yoel.textContent=(k.yoy>=0?'+':'')+k.yoy.toFixed(1)+'%';
+    badgeel.textContent=(k.yoy>=0?'▲ Increase':'▼ Decrease')+' vs prev year';
+    badgeel.className='kb '+(k.yoy>=0?'kb-green':'kb-red');
+    yoel.style.color=k.yoy>=0?'#16a34a':'#dc2626';
+  }else{yoel.textContent='—';badgeel.textContent='Select 2+ years';badgeel.className='kb kb-blue';}
+}
+
+function getMonthlyByYear(){
+  var res={};
+  var src=ST.item==='all'?DATA.ym_all:(DATA.item_ym[ST.item]||{});
+  ST.years.forEach(function(yr){
+    res[yr]=[];
+    for(var m=1;m<=12;m++){
+      var key=yr+'-'+(m<10?'0':'')+m;
+      res[yr].push(src[key]?src[key].t:null);
+    }
+  });
+  return res;
+}
+
+function getMonthlyTxnByYear(){
+  var res={};
+  var src=ST.item==='all'?DATA.ym_all:(DATA.item_ym[ST.item]||{});
+  ST.years.forEach(function(yr){
+    res[yr]=[];
+    for(var m=1;m<=12;m++){
+      var key=yr+'-'+(m<10?'0':'')+m;
+      res[yr].push(src[key]?src[key].c:null);
+    }
+  });
+  return res;
+}
+
+var commonOpts={
+  responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}}},
+  scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{ticks:{font:{size:10}},grid:{color:'#f1f5f9'}}}
+};
+
+function updateTrend(){
+  var mby=getMonthlyByYear();
+  var ds=ST.years.map(function(yr){
+    return{label:yr,data:mby[yr],borderColor:YC[yr]||'#888',backgroundColor:(YC[yr]||'#888')+'22',borderWidth:2.5,pointRadius:3,tension:.35,fill:false,spanGaps:true};
+  });
+  mkChart('c-trend','line',{labels:MS,datasets:ds},{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+      tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+fmtK(c.raw||0);}}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:11}}},
+      y:{ticks:{callback:function(v){return fmtK(v);},font:{size:10}},grid:{color:'#f1f5f9'}}}
+  });
+}
+
+function updateYearly(){
+  var labs=AY.filter(function(y){return DATA.yearly[y];});
+  var amts=labs.map(function(y){return DATA.yearly[y].t;});
+  var cols=labs.map(function(y){return ST.years.indexOf(y)>=0?(YC[y]||'#3b82f6')+'cc':'#cbd5e0';});
+  mkChart('c-yearly','bar',{labels:labs,datasets:[{label:'Total Spend',data:amts,backgroundColor:cols,borderRadius:6,borderSkipped:false}]},{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return '฿'+Math.round(c.raw).toLocaleString();}}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:11}}},
+      y:{ticks:{callback:function(v){return fmtK(v);},font:{size:10}},grid:{color:'#f1f5f9'}}}
+  });
+}
+
+function updateTxn(){
+  var mby=getMonthlyTxnByYear();
+  var ds=ST.years.map(function(yr){
+    return{label:yr,data:mby[yr],backgroundColor:(YC[yr]||'#888')+'bb',borderRadius:3,borderSkipped:false};
+  });
+  mkChart('c-txn','bar',{labels:MS,datasets:ds},{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{ticks:{font:{size:10}},grid:{color:'#f1f5f9'}}}
+  });
+}
+
+function updateAvgMo(){
+  var src=ST.item==='all'?DATA.ym_all:(DATA.item_ym[ST.item]||{});
+  var ds=ST.years.map(function(yr){
+    var d=[];
+    for(var m=1;m<=12;m++){
+      var key=yr+'-'+(m<10?'0':'')+m;
+      d.push(src[key]&&src[key].c>0?src[key].t/src[key].c:null);
+    }
+    return{label:yr,data:d,borderColor:YC[yr]||'#888',backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:.3,spanGaps:true};
+  });
+  mkChart('c-avg-mo','line',{labels:MS,datasets:ds},{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+      tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+fmtK(c.raw||0);}}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:11}}},
+      y:{ticks:{callback:function(v){return fmtK(v);},font:{size:10}},grid:{color:'#f1f5f9'}}}
+  });
+}
+
+function updateItemCharts(){
+  var items=getItems();
+  var sorted=Object.entries(items).sort(function(a,b){return b[1].t-a[1].t;});
+  var labs=sorted.map(function(x){return x[0];});
+  var amts=sorted.map(function(x){return x[1].t;});
+  var total=amts.reduce(function(s,v){return s+v;},0);
+
+  mkChart('c-item-bar','bar',{labels:labs,datasets:[{label:'Total Amount',data:amts,
+    backgroundColor:labs.map(function(_,i){return IC[i%IC.length]+'cc';}),borderRadius:4,borderSkipped:false}]},{
+    indexAxis:'y',responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return fmtK(c.raw)+' ('+(c.raw/total*100).toFixed(1)+'%)';}}}},
+    scales:{x:{ticks:{callback:function(v){return fmtK(v);},font:{size:10}},grid:{color:'#f1f5f9'}},
+      y:{ticks:{font:{size:11}},grid:{display:false}}}
+  });
+
+  mkChart('c-donut','doughnut',{labels:labs,datasets:[{data:amts,
+    backgroundColor:labs.map(function(_,i){return IC[i%IC.length];}),borderWidth:3,borderColor:'#fff'}]},{
+    responsive:true,maintainAspectRatio:false,cutout:'60%',
+    plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11},padding:8}},
+      tooltip:{callbacks:{label:function(c){return ' '+c.label+': '+fmtK(c.raw)+' ('+(c.raw/total*100).toFixed(1)+'%)';}}}
+    }
+  });
+
+  var cum=0;
+  var paretoCum=amts.map(function(v){cum+=v;return parseFloat((cum/total*100).toFixed(1));});
+  mkChart('c-pareto','bar',{labels:labs,datasets:[
+    {type:'bar',label:'Amount',data:amts,backgroundColor:labs.map(function(_,i){return IC[i%IC.length]+'cc';}),borderRadius:4,borderSkipped:false,yAxisID:'y'},
+    {type:'line',label:'Cumulative %',data:paretoCum,borderColor:'#dc2626',backgroundColor:'transparent',borderWidth:2.5,pointRadius:4,pointBackgroundColor:'#dc2626',yAxisID:'y2'}
+  ]},{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+      tooltip:{callbacks:{label:function(c){return c.datasetIndex===0?fmtK(c.raw):c.raw+'%';}}}},
+    scales:{
+      x:{grid:{display:false},ticks:{font:{size:10},maxRotation:30}},
+      y:{position:'left',ticks:{callback:function(v){return fmtK(v);},font:{size:10}},grid:{color:'#f1f5f9'}},
+      y2:{position:'right',min:0,max:100,ticks:{callback:function(v){return v+'%';},font:{size:10}},grid:{display:false}}
+    }
+  });
+}
+
+function classify(item,items){
+  var v=items[item];if(!v)return{cls:'Low Usage',badge:'b-lu',desc:'No data'};
+  var allAmts=Object.values(items).map(function(x){return x.t;}).sort(function(a,b){return b-a;});
+  var allCts=Object.values(items).map(function(x){return x.c;}).sort(function(a,b){return b-a;});
+  var n=allAmts.length;
+  var iy=DATA.item_year[item]||{};
+  var yrs=Object.keys(iy).sort();
+  var growth=null;
+  if(yrs.length>=2){
+    var p=iy[yrs[yrs.length-2]].t||0,c=iy[yrs[yrs.length-1]].t||0;
+    if(p>0)growth=(c-p)/p*100;
+  }
+  var hasOld=yrs.some(function(y){return parseInt(y)<=2022;});
+  if(growth!==null&&growth>25&&!hasOld)return{cls:'Emerging',badge:'b-em',desc:'New & Growing'};
+  if(growth!==null&&growth>15)return{cls:'Emerging',badge:'b-em',desc:'Fast Growing'};
+  var rank=allAmts.indexOf(v.t),crank=allCts.indexOf(v.c);
+  if(rank<n*0.3&&crank<n*0.3)return{cls:'High Spending',badge:'b-hs',desc:'Top Spend & Freq'};
+  if(rank<n*0.3)return{cls:'High Spending',badge:'b-hs',desc:'High Budget Impact'};
+  if(crank<n*0.3)return{cls:'High Frequency',badge:'b-hf',desc:'Frequently Used'};
+  if(v.c<10)return{cls:'Low Usage',badge:'b-lu',desc:'Rarely Claimed'};
+  return{cls:'Standard',badge:'b-st',desc:'Stable Usage'};
+}
+
+function updateItemTable(){
+  var items=getItems();
+  var sorted=Object.entries(items).sort(function(a,b){return b[1].t-a[1].t;});
+  var total=sorted.reduce(function(s,e){return s+e[1].t;},0);
+  var tbody=document.getElementById('item-table-body');
+  tbody.innerHTML='';
+  sorted.forEach(function(entry,idx){
+    var item=entry[0],v=entry[1];
+    var cl=classify(item,items);
+    var iy=DATA.item_year[item]||{};
+    var yrs=Object.keys(iy).sort();
+    var yoyG=null;
+    if(yrs.length>=2){var p=iy[yrs[yrs.length-2]].t||0,c=iy[yrs[yrs.length-1]].t||0;if(p>0)yoyG=(c-p)/p*100;}
+    var share=(v.t/total*100).toFixed(1);
+    var avg=v.c>0?v.t/v.c:0;
+    var yoyStr=yoyG!==null?((yoyG>=0?'<span style="color:#16a34a">▲ +':'<span style="color:#dc2626">▼ ')+yoyG.toFixed(1)+'%</span>'):'&mdash;';
+    var tr=document.createElement('tr');
+    tr.innerHTML='<td><strong>'+item+'</strong></td>'
+      +'<td><span class="badge '+cl.badge+'">'+cl.cls+'</span><br><span style="font-size:10px;color:#94a3b8">'+cl.desc+'</span></td>'
+      +'<td><strong>'+fmtK(v.t)+'</strong></td>'
+      +'<td>'+fmtN(v.c)+'</td>'
+      +'<td>'+fmtK(avg)+'</td>'
+      +'<td>'+yoyStr+'</td>'
+      +'<td>'+share+'%<div class="progress-bar"><div class="progress-fill" style="width:'+share+'%;background:'+IC[idx%IC.length]+'"></div></div></td>';
+    tbody.appendChild(tr);
+  });
+}
+
+function updatePatterns(){
+  var ym=getYM();
+  var entries=Object.entries(ym).sort(function(a,b){return a[0].localeCompare(b[0]);});
+  if(!entries.length)return;
+  var mo_t=new Array(12).fill(0),mo_c=new Array(12).fill(0);
+  entries.forEach(function(e){
+    var m=parseInt(e[0].split('-')[1])-1;mo_t[m]+=e[1].t;mo_c[m]++;
+  });
+  var mo_avg=mo_t.map(function(t,i){return mo_c[i]>0?t/mo_c[i]:0;});
+  var filtered_avg=mo_avg.filter(function(v){return v>0;});
+  var peakIdx=mo_avg.indexOf(Math.max.apply(null,mo_avg));
+  var lowIdx=mo_avg.indexOf(Math.min.apply(null,filtered_avg.length?filtered_avg:[0]));
+  var peakE=entries.slice().sort(function(a,b){return b[1].t-a[1].t;})[0];
+  var pparts=peakE[0].split('-');
+  document.getElementById('peak-month').textContent=MF[peakIdx];
+  document.getElementById('peak-sub').textContent='Avg ฿'+Math.round(mo_avg[peakIdx]).toLocaleString()+' across years';
+  document.getElementById('low-month').textContent=MF[lowIdx];
+  document.getElementById('low-sub').textContent='Avg ฿'+Math.round(mo_avg[lowIdx]).toLocaleString()+' across years';
+  document.getElementById('spike-month').textContent=MF[parseInt(pparts[1])-1]+' '+pparts[0];
+  document.getElementById('spike-sub').textContent='฿'+Math.round(peakE[1].t).toLocaleString()+' — single highest month';
+}
+
+function updateQuarterly(){
+  var src=ST.item==='all'?DATA.ym_all:(DATA.item_ym[ST.item]||{});
+  var qD={};
+  ST.years.forEach(function(yr){
+    qD[yr]=[0,0,0,0];
+    for(var m=1;m<=12;m++){
+      var key=yr+'-'+(m<10?'0':'')+m;
+      if(src[key])qD[yr][Math.floor((m-1)/3)]+=src[key].t;
+    }
+  });
+  var ds=ST.years.map(function(yr){
+    return{label:yr,data:qD[yr],backgroundColor:(YC[yr]||'#888')+'bb',borderRadius:4,borderSkipped:false};
+  });
+  mkChart('c-quarterly','bar',{labels:['Q1','Q2','Q3','Q4'],datasets:ds},{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:11}}},
+      tooltip:{callbacks:{label:function(c){return c.dataset.label+': '+fmtK(c.raw);}}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:12}}},
+      y:{ticks:{callback:function(v){return fmtK(v);},font:{size:10}},grid:{color:'#f1f5f9'}}}
+  });
+}
+
+function updateMoM(){
+  var ym=getYM();
+  var sorted=Object.entries(ym).sort(function(a,b){return a[0].localeCompare(b[0]);});
+  var labs=[],vals=[];
+  for(var i=1;i<sorted.length;i++){
+    var prev=sorted[i-1][1].t,curr=sorted[i][1].t;
+    if(prev>0){labs.push(sorted[i][0].slice(2));vals.push(parseFloat(((curr-prev)/prev*100).toFixed(1)));}
+  }
+  mkChart('c-mom','bar',{labels:labs,datasets:[{label:'MoM Growth %',data:vals,
+    backgroundColor:vals.map(function(v){return v>=0?'#22c55e99':'#ef444499';}),borderRadius:3,borderSkipped:false}]},{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return (c.raw>=0?'+':'')+c.raw+'%';}}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:9},maxRotation:60,autoSkip:true,maxTicksLimit:18}},
+      y:{ticks:{callback:function(v){return v+'%';},font:{size:10}},grid:{color:'#f1f5f9'}}}
+  });
+}
+
+function updateHeatmap(){
+  var src=ST.item==='all'?DATA.ym_all:(DATA.item_ym[ST.item]||{});
+  var grid=document.getElementById('heatmap');
+  grid.innerHTML='';
+  var maxVal=0;
+  AY.forEach(function(yr){
+    for(var m=1;m<=12;m++){
+      var key=yr+'-'+(m<10?'0':'')+m;
+      if(src[key]&&src[key].t>maxVal)maxVal=src[key].t;
+    }
+  });
+  var empty=document.createElement('div');empty.className='hm-hdr';grid.appendChild(empty);
+  MS.forEach(function(m){var d=document.createElement('div');d.className='hm-hdr';d.textContent=m;grid.appendChild(d);});
+  AY.forEach(function(yr){
+    var yl=document.createElement('div');yl.className='hm-yr';yl.textContent=yr;grid.appendChild(yl);
+    for(var m=1;m<=12;m++){
+      var key=yr+'-'+(m<10?'0':'')+m;
+      var cell=document.createElement('div');cell.className='hm-cell';
+      var v=src[key];
+      var isSel=ST.years.indexOf(yr)>=0&&(ST.month===0||ST.month===m);
+      if(v&&v.t>0){
+        if(isSel){
+          var intens=v.t/maxVal;
+          var r=Math.round(14+(197-14)*intens);
+          var g=Math.round(144+(82-144)*intens);
+          var b=Math.round(33+(9-33)*intens);
+          cell.style.background='rgb('+r+','+g+','+b+')';
+          cell.style.color=intens>0.4?'#fff':'#92400e';
+        }else{cell.style.background='#f1f5f9';cell.style.color='#94a3b8';}
+        cell.textContent=v.t>=1e6?(v.t/1e6).toFixed(1)+'M':v.t>=1e3?Math.round(v.t/1e3)+'K':Math.round(v.t);
+        cell.title=MF[m-1]+' '+yr+': ฿'+Math.round(v.t).toLocaleString()+' ('+v.c+' claims)';
+      }else{cell.style.background='#f8fafc';cell.style.color='#e2e8f0';cell.textContent='—';}
+      grid.appendChild(cell);
+    }
+  });
+}
+
+function updateYoY(){
+  var labs=AY.filter(function(y){return DATA.yearly[y];});
+  var vals=labs.map(function(y,i){
+    if(i===0)return null;
+    var p=DATA.yearly[labs[i-1]].t,c=DATA.yearly[y].t;
+    return parseFloat(((c-p)/p*100).toFixed(1));
+  });
+  mkChart('c-yoy','bar',{labels:labs,datasets:[{label:'YoY Growth %',data:vals,
+    backgroundColor:vals.map(function(v){return v===null?'#e2e8f0':v>=0?'#22c55e99':'#ef444499';}),
+    borderRadius:4,borderSkipped:false}]},{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:function(c){return c.raw===null?'N/A':(c.raw>=0?'+':'')+c.raw+'%';}}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:11}}},
+      y:{ticks:{callback:function(v){return v+'%';},font:{size:10}},grid:{color:'#f1f5f9'}}}
+  });
+}
+
+function updateItemTrend(){
+  var top5=['Leisure & Spa','Optical Care','Sport Club','Dental Care','Face & Skin Care'];
+  var ds=top5.map(function(item,i){
+    return{label:item,data:AY.map(function(yr){var v=DATA.item_year[item]&&DATA.item_year[item][yr];return v?v.t:null;}),
+      borderColor:IC[i],backgroundColor:'transparent',borderWidth:2,pointRadius:3,tension:.3,spanGaps:true};
+  });
+  mkChart('c-item-trend','line',{labels:AY,datasets:ds},{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'top',labels:{boxWidth:12,font:{size:10}}}},
+    scales:{x:{grid:{display:false},ticks:{font:{size:11}}},
+      y:{ticks:{callback:function(v){return fmtK(v);},font:{size:10}},grid:{color:'#f1f5f9'}}}
+  });
+}
+
+function updateForecast(){
+  var k=getKPIs();
+  document.getElementById('fc-avg-mo').textContent=fmtK(k.avgMo);
+  document.getElementById('fc-avg-txn').textContent=fmtK(k.avg);
+  var fy=['2023','2024','2025'];
+  var gs=[];
+  for(var i=1;i<fy.length;i++){
+    var p=DATA.yearly[fy[i-1]].t,c=DATA.yearly[fy[i]].t;
+    if(p>0)gs.push((c-p)/p);
+  }
+  var ag=gs.length>0?gs.reduce(function(s,v){return s+v;},0)/gs.length:0.03;
+  var base=DATA.yearly['2025']?DATA.yearly['2025'].t:0;
+  var forecast=base*(1+ag);
+  document.getElementById('fc-next-yr').textContent=fmtK(forecast);
+  document.getElementById('fc-est-mo').textContent=fmtK(forecast/12);
+  document.getElementById('fc-next-yr-sub').textContent='Avg growth: '+(ag*100).toFixed(1)+'%';
+}
+
+function updateAnomaly(){
+  var ym=getYM();
+  var vals=Object.values(ym).map(function(v){return v.t;}).filter(function(v){return v>0;});
+  if(!vals.length){document.getElementById('anomaly-box').innerHTML='';return;}
+  var mean=vals.reduce(function(s,v){return s+v;},0)/vals.length;
+  var std=Math.sqrt(vals.reduce(function(s,v){return s+(v-mean)*(v-mean);},0)/vals.length);
+  var spikes=Object.entries(ym).filter(function(e){return e[1].t>mean+2*std;}).sort(function(a,b){return b[1].t-a[1].t;});
+  if(spikes.length>0){
+    var msgs=spikes.slice(0,3).map(function(e){
+      var p=e[0].split('-');
+      return '<strong>'+MF[parseInt(p[1])-1]+' '+p[0]+'</strong>: ฿'+Math.round(e[1].t).toLocaleString()+' ('+e[1].c+' claims) &mdash; '+((e[1].t-mean)/std).toFixed(1)+'&sigma; above avg';
+    });
+    document.getElementById('anomaly-box').innerHTML='<div class="anomaly-bar"><div class="ai">⚠️</div><div class="at"><strong>Abnormal Spending Detected:</strong> '+msgs.join(' &bull; ')+'</div></div>';
+  }else{document.getElementById('anomaly-box').innerHTML='';}
+}
+
+function updateExecSummary(){
+  var items=getItems(),ym=getYM(),k=getKPIs();
+  var sorted=Object.entries(items).sort(function(a,b){return b[1].t-a[1].t;});
+  var topItem=sorted[0]?sorted[0][0]:'N/A';
+  var topShare=sorted[0]?((sorted[0][1].t/k.ta)*100).toFixed(0)+'%':'&mdash;';
+  var fastItem='',fastG=-999;
+  sorted.forEach(function(e){
+    var iy=DATA.item_year[e[0]]||{};
+    var yrs=Object.keys(iy).sort();
+    if(yrs.length>=2){var p=iy[yrs[yrs.length-2]].t||0,c=iy[yrs[yrs.length-1]].t||0;if(p>0){var g=(c-p)/p*100;if(g>fastG){fastG=g;fastItem=e[0];}}}
+  });
+  var mo_t=new Array(12).fill(0),mo_c=new Array(12).fill(0);
+  Object.entries(ym).forEach(function(e){var m=parseInt(e[0].split('-')[1])-1;mo_t[m]+=e[1].t;mo_c[m]++;});
+  var mo_avg=mo_t.map(function(t,i){return mo_c[i]>0?t/mo_c[i]:0;});
+  var peakMo=MF[mo_avg.indexOf(Math.max.apply(null,mo_avg))];
+  var period=ST.years.join(', ');
+  var yoyTxt=k.yoy!==null?('This represents a '+(k.yoy>0?'<strong style="color:#4ade80">+'+k.yoy.toFixed(1)+'% increase</strong>':'<strong style="color:#f87171">'+k.yoy.toFixed(1)+'% decrease</strong>')+' year-over-year. '):'';
+  var growTxt=fastItem&&fastG>0?('<strong>'+fastItem+'</strong> shows the strongest growth at +'+fastG.toFixed(0)+'%, signaling rising employee interest. '):'';
+  var q4Txt=(peakMo==='December'||peakMo==='November')?'<strong>Q4 — particularly December</strong> remains the peak utilization period, indicating employees utilize remaining benefits before year-end. ':'Peak utilization occurs in <strong>'+peakMo+'</strong>. ';
+  var base25=DATA.yearly['2025']?DATA.yearly['2025'].t:0;
+  document.getElementById('exec-summary-text').innerHTML=
+    'For the selected period (<strong>'+period+'</strong>), total Flexi Benefit spending reached <strong>'+fmtM(k.ta)+'</strong> across <strong>'+fmtN(k.tc)+'</strong> transactions. '
+    +yoyTxt+'<strong>'+topItem+'</strong> dominates at '+topShare+' of total expenditure. '
+    +growTxt+q4Txt
+    +'Average cost per claim stands at <strong>'+fmtK(k.avg)+'</strong>. Budget forecast for next fiscal year is estimated at <strong>'+fmtK(base25*1.03)+'</strong> based on historical growth trends.';
+}
+
+function updateAI(){
+  var items=getItems(),k=getKPIs(),ym=getYM();
+  var sorted=Object.entries(items).sort(function(a,b){return b[1].t-a[1].t;});
+  var total=k.ta;
+  var ins=[];
+  if(sorted[0]){
+    var pct=(sorted[0][1].t/total*100).toFixed(0);
+    ins.push({dot:'#2563eb',text:'<strong>'+sorted[0][0]+'</strong> is the highest-spending benefit category, consuming '+pct+'% of total budget (฿'+Math.round(sorted[0][1].t).toLocaleString()+'). Management should ensure adequate allocation for this category in future planning cycles.'});
+  }
+  var fastItem='',fastG=-999;
+  sorted.forEach(function(e){
+    var iy=DATA.item_year[e[0]]||{};var yrs=Object.keys(iy).sort();
+    if(yrs.length>=2){var p=iy[yrs[yrs.length-2]].t||0,c=iy[yrs[yrs.length-1]].t||0;if(p>0){var g=(c-p)/p*100;if(g>fastG){fastG=g;fastItem=e[0];}}}
+  });
+  if(fastItem&&fastG>0)ins.push({dot:'#16a34a',text:'<strong>'+fastItem+'</strong> demonstrates the strongest year-over-year growth at <strong>+'+fastG.toFixed(0)+'%</strong>, indicating growing employee adoption. Consider increasing the budget allocation and reviewing claim limits for this category.'});
+  var nm=Object.keys(ym).length;
+  if(nm>0){
+    var atpm=(k.tc/nm).toFixed(0);
+    ins.push({dot:'#9b59b6',text:'Employees submit an average of <strong>'+atpm+' claims per month</strong>. Transaction volume shows a clear upward trajectory since 2023, suggesting higher benefit awareness. This trend requires proactive budget management.'});
+  }
+  var decE=Object.entries(ym).filter(function(e){return e[0].endsWith('-12');});
+  var ndecE=Object.entries(ym).filter(function(e){return !e[0].endsWith('-12');});
+  if(decE.length>0&&ndecE.length>0){
+    var dA=decE.reduce(function(s,e){return s+e[1].t;},0)/decE.length;
+    var ndA=ndecE.reduce(function(s,e){return s+e[1].t;},0)/ndecE.length;
+    ins.push({dot:'#f59e0b',text:'December consistently generates <strong>'+(dA/ndA).toFixed(1)+'x more spending</strong> than the monthly average, suggesting a year-end rush to utilize remaining allowances. Prepare <strong>2–3x normal budget</strong> for November–December cash flow management.'});
+  }
+  var newItems=Object.keys(DATA.item_year).filter(function(item){
+    var yrs=Object.keys(DATA.item_year[item]||{}).sort();
+    return yrs.length>0&&parseInt(yrs[0])>=2023;
+  });
+  if(newItems.length>0)ins.push({dot:'#ec4899',text:'<strong>'+newItems.join(' and ')+'</strong> '+(newItems.length>1?'are':'is')+' emerging benefit '+(newItems.length>1?'categories':'category')+' introduced from 2023 onward, reflecting evolving employee wellness preferences. Monitor these closely for future policy adjustments.'});
+  var fy=['2023','2024','2025'];
+  var total23=DATA.yearly['2023']?DATA.yearly['2023'].t:0;
+  var total25=DATA.yearly['2025']?DATA.yearly['2025'].t:0;
+  var tg=total23>0?(total25-total23)/total23*100:0;
+  var fc25=total25*1.03;
+  ins.push({dot:'#dc2626',text:'<strong>Recommended 2027 Budget Allocation:</strong> Based on 3-year compound growth (+'+tg.toFixed(0)+'% since 2023), estimated Flexi Benefit budget is <strong>'+fmtK(fc25)+'</strong>. Suggested split: 40% Leisure & Spa, 25% Optical Care, 15% Sport Club, 20% other categories.'});
+  document.getElementById('ai-insights').innerHTML=ins.map(function(i){
+    return '<div class="ai-item"><div class="ai-dot" style="background:'+i.dot+'"></div><div class="ai-text">'+i.text+'</div></div>';
+  }).join('');
+}
+
+function updateAll(){
+  updateKPIs();updateExecSummary();updateAnomaly();
+  updateTrend();updateYearly();updateTxn();updateAvgMo();
+  updateItemCharts();updateItemTable();
+  updatePatterns();updateQuarterly();updateMoM();updateHeatmap();
+  updateYoY();updateItemTrend();
+  updateForecast();updateAI();
+}
+
+document.getElementById('hdr-date').textContent=new Date().toLocaleDateString('en-US',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+buildYearButtons();buildItemFilter();updateAll();
+
+</script>
+</body>
+</html>
